@@ -7,8 +7,9 @@
 0.1d0              ! mixing parameter
 40                 ! number of bonds
 6                  ! number of conformations
-45                 ! number of points in r direction  
-90                ! number of points in z direction
+45                 ! number of points in x direction
+45                 ! number of points in y direction
+45                 ! number of points in z direction
 5000               ! number of prerotated   
 200                ! number of move in a MC step 
 50                 ! Max of iterations

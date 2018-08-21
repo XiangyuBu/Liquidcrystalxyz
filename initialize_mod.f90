@@ -58,6 +58,7 @@ read(10,*) N_theta         ! lattice of theta in [0,pi/2] by discretlizing delta
 read(10,*) N_phi           ! lattice of phi in [-pi,pi] by discretlizing delta_x in [-1, 1]
 read(10,*) isomer          !  0 for trans (straight line) ; 1 for sis (folding)  
 read(10,*) length          !test initial MC move
+
 close(10)
 
 allocate(polymer(1:N_chain,0:Nm_chain))

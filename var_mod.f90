@@ -8,12 +8,13 @@ Integer :: i, j, k,jp,ip
 integer :: change ! change is the flag of MC, 1 for accepte the move.
 
 DOUBLE PRECISION :: r, cos2sum, cossum
-DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: density
-DOUBLE PRECISION, DIMENSION(:,:,:,:), ALLOCATABLE :: density_polymer,density_azo 
-DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: costheta, costheta_2
+DOUBLE PRECISION, DIMENSION(:,:,:), ALLOCATABLE :: density
+DOUBLE PRECISION, DIMENSION(:,:,:,:,:), ALLOCATABLE :: density_polymer,density_azo 
+DOUBLE PRECISION, DIMENSION(:,:,:), ALLOCATABLE :: costheta, costheta_2
 logical alive,check
-allocate( density_polymer(1:Nr+1,1:Nz,1:N_theta,1:N_phi),density_azo(1:Nr+1,1:Nz,1:N_theta,1:N_phi) )
-allocate( costheta(1:Nr+1,1:Nz),costheta_2(1:Nr+1,1:Nz),density(1:Nr+1,1:Nz))
+allocate(density_polymer(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
+allocate(density_azo(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
+allocate(costheta(1:Nx,1:Ny,1:Nz),costheta_2(1:Nx,1:Ny,1:Nz),density(1:Nx,1:Ny,1:Nz))
 
 open(unit=60,file='costheta.txt')
 open(unit=61,file='azonew.txt')
@@ -26,11 +27,13 @@ inquire(file='w.txt',exist=alive)
 if(alive) then                          
     open(unit=42,file='w.txt',status='old')
     print*, "var is beginning"
-    do j = 1, Nr + 1
-        do i = 1, Nz
-            do jp =1, N_theta
-                do ip = 1, N_phi
-                    read(42,*) w(j,i,jp,ip)  
+    do i = 1, Nx
+        do j = 1, Ny
+            do k = 1, Nz
+                do jp =1, N_theta
+                    do ip = 1, N_phi
+                        read(42,*) w(i,j,k,jp,ip)  
+                    end do
                 end do
             end do
         end do
@@ -92,15 +95,11 @@ do while(MCS < 10*NMCs)
         end do   
         do j = 1,N_chain
             do i = 1,Nm_chain
-                
-                if (ir(j,i)>Nr+1 .or. iz(j,i)>Nz) then
-                    print*,ir(j,i),iz(j,i)
-                end if
-                
-                costheta(ir(j,i),iz(j,i)) = costheta(ir(j,i),iz(j,i)) + (polymer(j,i)%z - polymer(j,i-1)%z)
-                costheta_2(ir(j,i),iz(j,i)) = costheta_2(ir(j,i),iz(j,i)) &
-                                            + 1.5d0*(polymer(j,i)%z - polymer(j,i-1)%z)**2 - 0.5d0
-                density(ir(j,i),iz(j,i)) = density(ir(j,i),iz(j,i)) + 1
+                                
+                costheta(ix(j,i),iy(j,i),iz(j,i)) = costheta(ix(j,i),iy(j,i),iz(j,i)) + (polymer(j,i)%z - polymer(j,i-1)%z)
+                costheta_2(ix(j,i),iy(j,i),iz(j,i)) = costheta_2(ix(j,i),iy(j,i),iz(j,i)) &
+                                                    + 1.5d0*(polymer(j,i)%z - polymer(j,i-1)%z)**2 - 0.5d0
+                density(ix(j,i),iy(j,i),iz(j,i)) = density(ix(j,i),iy(j,i),iz(j,i)) + 1
             end do
             cos2sum = cos2sum + 1.5d0*(polymer(j,2)%z - polymer(j,1)%z)**2 - 0.5d0
             cossum = cossum + (polymer(j,2)%z - polymer(j,1)%z) 
@@ -109,16 +108,16 @@ do while(MCS < 10*NMCs)
 !    cal density
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!       
         do j=1,N_chain
-            density_polymer(ir(j,0),iz(j,0),0,0) = density_polymer(ir(j,0),iz(j,0),0,0) + 1
+            density_polymer(ix(j,0),iy(j,0),iz(j,0),0,0) = density_polymer(ix(j,0),iy(j,0),iz(j,0),0,0) + 1
             do i=1,Nm_chain
-                density_polymer(ir(j,i),iz(j,i),itheta(j),iphi(j)) &
-                = density_polymer( ir(j,i),iz(j,i),itheta(j),iphi(j) ) + 1                
+                density_polymer(ix(j,i),iy(j,i),iz(j,i),itheta(j),iphi(j)) &
+                = density_polymer( ix(j,i),iy(j,i),iz(j,i),itheta(j),iphi(j) ) + 1                
             end do
         end do
 !        do j=1,N_azo
 !            do i=1,Nm
-!                density_azo(ir_azo(j,i),iz_azo(j,i),itheta_azo(j,i),iphi_azo(j,i)) &
-!                = density_azo(ir_azo(j,i),iz_azo(j,i),itheta_azo(j,i),iphi_azo(j,i)) + 1                
+!                density_azo(ix_azo(j,i),iy_azo(j,i),iz_azo(j,i),itheta_azo(j,i),iphi_azo(j,i)) &
+!                = density_azo(ix_azo(j,i),iy_azo(j,i),iz_azo(j,i),itheta_azo(j,i),iphi_azo(j,i)) + 1                
 !            end do
 !        end do
 
@@ -147,17 +146,15 @@ write(64,*) cos2sum, cossum
 print*, "MCS is ok "
 print*, "cos2thetasum is", cos2sum
 print*, "costhetasum is", cossum
-do i=1,nr  
-    density_polymer(i,:,:,:) = density_polymer(i,:,:,:)/(2*pi*r_a(i)*dr*dz)/rho_0
-!    density_azo(i,:,:,:) = density_azo(i,:,:,:)/( r_a(i)*r_dr*r_dz )
-!    costheta(i,:) = costheta(i,:)/(r_a(i)*r_dr*r_dz)
-    costheta_2(i,:) = costheta_2(i,:)/(2*pi*r_a(i)*dr*dz)/rho_0
-    density(i,:) = density(i,:)/(2*pi*r_a(i)*dr*dz)/rho_0
-end do
+density_polymer(:,:,:,:,:) = density_polymer(:,:,:,:,:)/rho_0
+costheta_2(:,:,:) = costheta_2(:,:,:)/rho_0
+density(:,:,:) = density(:,:,:)/rho_0
  
-do j = 1,Nr
-    do i = 1,Nz
-        write(60,*) j, i, costheta_2(j,i), density(j,i) 
+do i = 1,Nx
+    do j = 1,Ny
+        do k = 1,Nz
+            write(60,"(7E25.13)") i,j,k,costheta_2(i,j,k),density(i,j,k)
+        end do
     end do
 end do
 close(60)

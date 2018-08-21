@@ -19,7 +19,8 @@ Integer :: N_theta, N_phi
 Integer :: Movestep    !each MC attempt move
 Integer :: i_azo, isomer
 Integer :: num
-Double Precision :: dx, dy, dz, Lx, Ly, Lz, Lz_2, dtheta, dphi
+Double Precision :: dx, dy, dz, Lx, Ly, Lz, dtheta, dphi
+Double Precision :: Lz_2, Ly_2, Lx_2
 Double Precision :: r_sphere_2,r_sphere, roL, rho_0 
 Double Precision :: move_max, rotate, rotate_s,loa_polymer,csoL
 

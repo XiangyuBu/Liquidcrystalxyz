@@ -12,14 +12,14 @@ integer :: flag_c
 DOUBLE PRECISION, PARAMETER :: TOL = 1.5D-3
 DOUBLE PRECISION ::  w_erro, r
 DOUBLE PRECISION :: derro(1:70),erro(1:70),errodown
-DOUBLE PRECISION, DIMENSION(:,:,:,:), ALLOCATABLE :: density
+DOUBLE PRECISION, DIMENSION(:,:,:,:,:), ALLOCATABLE :: density
 
 
 character*7 res,resres,res_s,res_o
 character res0,res1,res2
 
-allocate( density(1:Nr+1,1:Nz,1:N_theta,1:N_phi) )
-allocate( w_new(1:Nr+1,1:Nz,0:N_theta,0:N_phi) )
+allocate( density(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi) )
+allocate( w_new(1:Nx,1:Ny,1:Nz,0:N_theta,0:N_phi) )
 !!! iteration
  
 open(unit=15, file='Npre.txt')
@@ -185,34 +185,32 @@ print*, "start", n_iter,"iteration"
 
     
         do j=1,N_chain
-            density(ir(j,0),iz(j,0),0,0) = density(ir(j,0),iz(j,0),0,0) + 1
+            density(ix(j,0),iy(j,0),iz(j,0),0,0) = density(ix(j,0),iy(j,0),iz(j,0),0,0) + 1
             do i=1,Nm_chain
-                density(ir(j,i),iz(j,i),itheta(j),iphi(j)) &
-                = density(ir(j,i),iz(j,i),itheta(j),iphi(j)) + 1
-!                print*,density(ir(j,i),iz(j,i),itheta(j),iphi(j))                
+                density(ix(j,i),iy(j,i),iz(j,i),itheta(j),iphi(j)) &
+                = density(ix(j,i),iy(j,i),iz(j,i),itheta(j),iphi(j)) + 1
+!                print*,density(ix(j,i),iy(j,i),iz(j,i),itheta(j),iphi(j))                
             end do
         end do
 
 !        do j=1,N_azo
-!            density(ir_azo(j,0),iz_azo(j,0),0,0) = density(ir_azo(j,0),iz_azo(j,0),0,0) + 1
+!            density(ix_azo(j,0),iy_azo(j,0),iz_azo(j,0),0,0) = density(ix_azo(j,0),iy_azo(j,0),iz_azo(j,0),0,0) + 1
 !            do i=1,Nm
-!                density(ir_azo(j,i),iz_azo(j,i),itheta_azo(j,i),iphi_azo(j,i)) &
-!                = density(ir_azo(j,i),iz_azo(j,i),itheta_azo(j,i),iphi_azo(j,i)) + 1                
+!                density(ix_azo(j,i),iy_azo(j,i),iz_azo(j,i),itheta_azo(j,i),iphi_azo(j,i)) &
+!                = density(ix_azo(j,i),iy_azo(j,i),iz_azo(j,i),itheta_azo(j,i),iphi_azo(j,i)) + 1                
 !            end do
 !        end do
     
     end do   ! MCS
     density = 0.5d0*density / MCS
-!    density = 0.5d0*deltaS*density / MCS  ! here 0.5 is consider the symetry of f(varphi) = f(-varphi) 
-    do i=1,nr+1  
-        density (i,:,:,:) = density (i,:,:,:)/( 2*pi*r_a(i)*dr*dz )/rho_0
-    end do
+!    density = 0.5d0*deltaS*density / MCS  ! here 0.5 is consider the symetry of f(varphi) = f(-varphi)   
+    density (:,:,:,:,:) = density (:,:,:,:,:)/rho_0
     w_new = 0
     do j = 1, N_theta
         do i = 1, N_phi
             do jp = 1, N_theta
                 do ip = 1, N_phi
-                    w_new(:,:,j,i) = w_new(:,:,j,i) + nu*density(:,:,jp,ip) * v_tide(j,i,jp,ip)
+                    w_new(:,:,:,j,i) = w_new(:,:,:,j,i) + nu*density(:,:,:,jp,ip) * v_tide(j,i,jp,ip)
                 end do
             end do
         end do
@@ -220,17 +218,18 @@ print*, "start", n_iter,"iteration"
    ! compute erros
     w_erro = 0
 
-    do j = 1, Nz
-        do i = 1, Nr+1
-            do jp =1, N_theta
-                do ip = 1, N_phi
-                    w_erro = w_erro + abs(w_new(i,j,jp,ip) - w(i,j,jp,ip))  
+    do k = 1, Nz
+        do j = 1, Ny
+            do i = 1, Nx
+                do jp =1, N_theta
+                    do ip = 1, N_phi
+                        w_erro = w_erro + abs(w_new(i,j,k,jp,ip) - w(i,j,k,jp,ip))  
+                    end do
                 end do
             end do
-       end do
-    end do
- 
-    w_erro = 1.d0*w_erro/Nz/Nr/N_theta/N_phi    
+        end do
+    end do  
+    w_erro = 1.d0*w_erro/Nz/Ny/Nx/N_theta/N_phi    
     
     print*, "SCMFT", n_iter, w_erro
    
@@ -238,15 +237,17 @@ print*, "start", n_iter,"iteration"
     if (w_erro<TOL .and. n_iter>3) then
         print*, "w_erro<TOL"
         open(unit=61, file='w.txt')
-        do j = 1, Nr+1 
-            do i = 1, Nz
-                do jp =1, N_theta
-                    do ip = 1, N_phi
-                        write(61,*) w_new(j,i,jp,ip)  
+        do i = 1, Nx
+            do j = 1, Ny 
+                do k = 1, Nz
+                    do jp =1, N_theta
+                        do ip = 1, N_phi
+                            write(61,*) w_new(i,j,k,jp,ip)  
+                        end do
                     end do
                 end do
             end do
-        end do
+        end do    
         close(61)
         exit
     end if
@@ -276,11 +277,13 @@ print*, "start", n_iter,"iteration"
     if (errodown>0.0d0 .or. n_iter==Max_iter) then
         print*,"errodown=",errodown
         open(unit=61, file='w.txt')
-        do j = 1, Nr+1 
-            do i = 1, Nz
-                do jp =1, N_theta
-                    do ip = 1, N_phi
-                        write(61,*) w_new(j,i,jp,ip)  
+        do i = 1, Nx
+            do j = 1, Ny 
+                do k = 1, Nz
+                    do jp =1, N_theta
+                        do ip = 1, N_phi
+                            write(61,*) w_new(i,j,k,jp,ip)  
+                        end do
                     end do
                 end do
             end do
@@ -293,13 +296,7 @@ print*, "start", n_iter,"iteration"
     w = lambda*w_new + (1-lambda)*w
 
     ! boundary condition
-    do j = 1, Nz
-        do jp =1, N_theta
-            do ip = 1, N_phi
-              w(nr+1,j,jp,ip) = w(nr,j,jp,ip)
-            end do
-        end do 
-    end do         
+         
 !    call checkpolymer (flag_c)             
 
 end do  ! enddo n_iter

@@ -8,7 +8,8 @@ subroutine pivot_azo (change)
     INTEGER i, j, length, jj
     INTEGER :: change
     type(node) :: new(0:401)
-    INTEGER :: ir_temp(0:401), iz_temp(0:501), itheta_new(0:501), iphi_new(0:401)
+    INTEGER :: ix_temp(0:401),iy_temp(0:401),iz_temp(0:501)
+    INTEGER :: itheta_new(0:501),iphi_new(0:401)
     DOUBLE PRECISION :: axis(3)
     DOUBLE PRECISION :: r_radius, r, cos_t, sin_t, phi
     DOUBLE PRECISION :: unew(3), uold(3)  
@@ -79,25 +80,21 @@ if (change == 1) then
     end if   !endif i
     DE2 = 0.0d0    
     itheta_new(i+1) = floor( 0.99999999d0*abs(new(i+1)%z - azo(jj,i)%z)/dtheta ) + 1
-    phi_azo = 1 - 0.99999999d0*((new(i+1)%x - azo(jj,i)%x)*new(i+1)%x   & 
-                               +(new(i+1)%y - azo(jj,i)%y)*new(i+1)%y) &
-                               /dsqrt(new(i+1)%x*new(i+1)%x + new(i+1)%y*new(i+1)%y)
+    phi_azo = 1 - 0.99999999d0*(new(i+1)%x - azo(jj,i)%x)
     iphi_new(i+1) = floor( 0.99999999d0*phi_azo/dphi ) + 1
     do j = i+2, Nm
         itheta_new(j) = floor( 0.99999999d0*abs(new(j)%z - new(j-1)%z)/dtheta ) + 1
-        phi_azo = 1 - 0.99999999d0*((new(j)%x - new(j-1)%x)*new(j)%x   & 
-                                   +(new(j)%y - new(j-1)%y)*new(j)%y)  &
-                              /dsqrt(new(j)%x*new(j)%x + new(j)%y*new(j)%y)
+        phi_azo = 1 - 0.99999999d0*(new(j)%x - new(j-1)%x)
         iphi_new(j) = floor( 0.99999999d0*phi_azo/dphi ) + 1 
 !        print*,j,ir_azo(jj,j), iz_azo(jj,j), itheta_azo(jj,j), iphi_azo(jj,j)        
     end do    
     do j = i+1, Nm
-        r_radius = dsqrt( new(j)%x*new(j)%x + new(j)%y*new(j)%y )
-        ir_temp(j) = floor( r_radius / dr ) + 1
+        ix_temp(j) = floor( (new(j)%x + Lx_2) / dx ) + 1
+        iy_temp(j) = floor( (new(j)%y + Ly_2) / dy ) + 1
         iz_temp(j) = floor( (new(j)%z + Lz_2) / dz ) + 1
 !        print*,ir_temp(j), iz_temp(j), itheta_new(j), iphi_new(j)
-        DE2 = DE2 + w(ir_temp(j), iz_temp(j), itheta_new(j), iphi_new(j))  &
-                  - w(ir_azo(jj,j), iz_azo(jj,j), itheta_azo(jj,j), iphi_azo(jj,j) )          
+        DE2 = DE2 + w(ix_temp(j), iy_temp(j), iz_temp(j), itheta_new(j), iphi_new(j))  &
+                  - w(ix_azo(jj,j), iy_azo(jj,j), iz_azo(jj,j), itheta_azo(jj,j), iphi_azo(jj,j) )          
     end do
     r = ran2(seed)
    
@@ -106,8 +103,9 @@ if (change == 1) then
             azo(jj,j)%x = new(j)%x
             azo(jj,j)%y = new(j)%y
             azo(jj,j)%z = new(j)%z
-            iz_azo(jj,j) = iz_temp(j)
-            ir_azo(jj,j) = ir_temp(j)
+            ix_azo(jj,j) = ix_temp(j)
+            iy_azo(jj,j) = iy_temp(j)
+            iz_azo(jj,j) = iz_temp(j)            
             itheta_azo(jj,j) = itheta_new(j)
             iphi_azo(jj,j) = iphi_new(j)
         end do
@@ -125,7 +123,7 @@ subroutine pivot (change)
     INTEGER :: change
 	
     type(node) :: new(0:401)
-    INTEGER :: ir_temp(0:401), iz_temp(0:401)
+    INTEGER :: ix_temp(0:401),iy_temp(0:401),iz_temp(0:401)
     INTEGER :: itheta_new, iphi_new
     DOUBLE PRECISION :: axis(3)
     DOUBLE PRECISION :: r_radius,r_radius_1, r, cos_t, sin_t, phi
@@ -173,23 +171,21 @@ subroutine pivot (change)
     end do
     if (change == 1) then     
         itheta_new = floor( 0.99999999d0*abs(new(1)%z - polymer(jj,0)%z)/dtheta ) + 1
-        phi_azo = 1 - 0.99999999d0*((new(1)%x - polymer(jj,0)%x)*new(1)%x     &
-                                  + (new(1)%y - polymer(jj,0)%y)*new(1)%y)  &
-                              /dsqrt(new(1)%x*new(1)%x + new(1)%y*new(1)%y)
+        phi_azo = 1 - 0.99999999d0*(new(1)%x - polymer(jj,0)%x)
         iphi_new = floor( 0.99999999d0*phi_azo/dphi ) + 1
         do j = 1, Nm_chain  
             if ( new(j)%x>Lbox) then
-                x_r = new(j)%x - Lz
+                x_r = new(j)%x - Lx
             else if ( new(j)%x<(-Lbox) ) then
-                x_r = new(j)%x + Lz
+                x_r = new(j)%x + Lx
             else
                 x_r = new(j)%x
             end if
         
             if ( new(j)%y>Lbox ) then
-                y_r = new(j)%y - Lz
+                y_r = new(j)%y - Ly
             else if ( new(j)%y<(-Lbox)  ) then
-                y_r = new(j)%y + Lz
+                y_r = new(j)%y + Ly
             else
                 y_r = new(j)%y
             end if
@@ -200,21 +196,13 @@ subroutine pivot (change)
                 z_r = new(j)%z + Lz
             else 
                 z_r = new(j)%z
-            end if    
-            r_radius = dsqrt( x_r*x_r + y_r*y_r )
-            if(r_radius<Lr)then
-        	    ir_temp(j) = floor( r_radius / dr ) + 1
-            else 
-                ir_temp(j) = Nr + 1
-            end if            
-            iz_temp(j) = floor( (Lz_2 + z_r ) / dz ) + 1
-
-            if (iz_temp(j)>Nz .or. ir_temp(j)>Nr+1) then
-                print*, "segementation fault1"
-            end if      
-
-            DE2 = DE2 + w(ir_temp(j),iz_temp(j),itheta_new,iphi_new)  &
-                      - w(ir(jj,j), iz(jj,j), itheta(jj), iphi(jj))
+            end if                
+            ix_temp(j) = floor( (Lx_2 + x_r ) / dx ) + 1
+            iy_temp(j) = floor( (Ly_2 + y_r ) / dy ) + 1
+            iz_temp(j) = floor( (Lz_2 + z_r ) / dz ) + 1      
+            
+            DE2 = DE2 + w(ix_temp(j),iy_temp(j),iz_temp(j),itheta_new,iphi_new)  &
+                      - w(ix(jj,j),iy(jj,j),iz(jj,j),itheta(jj),iphi(jj))
         end do
 
     r = ran2(seed)
@@ -225,8 +213,9 @@ subroutine pivot (change)
             polymer(jj,j)%x = new(j)%x
             polymer(jj,j)%y = new(j)%y
             polymer(jj,j)%z = new(j)%z
+            ix(jj,j) = ix_temp(j)
+            iy(jj,j) = iy_temp(j)
             iz(jj,j) = iz_temp(j)
-            ir(jj,j) = ir_temp(j)
         end do  
         itheta(jj) = itheta_new
         iphi(jj) = iphi_new
@@ -247,7 +236,7 @@ subroutine polymer_move (change)
     integer :: change
 	
     type(node) :: new(0:401)
-    Integer :: ir_temp(0:401), iz_temp(0:401)
+    Integer :: ix_temp(0:401), iy_temp(0:401), iz_temp(0:401)
 
     DOUBLE PRECISION :: axis(3)
     DOUBLE PRECISION :: r_radius,r_radius_1, r, cos_t, sin_t, phi
@@ -280,21 +269,21 @@ subroutine polymer_move (change)
 
         if ( new(0)%x>Lbox .and. new(Nm_chain)%x>Lbox) then   
             do j = 0,Nm_chain
-                new(j)%x = new(j)%x - Lz
+                new(j)%x = new(j)%x - Lx
             end do
         else if (new(0)%x<(-Lbox) .and. new(Nm_chain)%x<(-Lbox)) then
             do j = 0,Nm_chain
-                new(j)%x = new(j)%x + Lz
+                new(j)%x = new(j)%x + Lx
             end do
         end if
 
         if ( new(0)%y>Lbox .and. new(Nm_chain)%y>Lbox) then   
             do j = 0,Nm_chain
-                new(j)%y = new(j)%y - Lz
+                new(j)%y = new(j)%y - Ly
             end do
         else if (new(0)%y<(-Lbox) .and. new(Nm_chain)%y<(-Lbox)) then
             do j = 0,Nm_chain
-                new(j)%y = new(j)%y + Lz
+                new(j)%y = new(j)%y + Ly
             end do
         end if
 
@@ -311,17 +300,17 @@ subroutine polymer_move (change)
         do j = 0, Nm_chain
 
             if ( new(j)%x>Lbox) then
-                x_r = new(j)%x - Lz
+                x_r = new(j)%x - Lx
             else if ( new(j)%x<(-Lbox) ) then
-                x_r = new(j)%x + Lz
+                x_r = new(j)%x + Lx
             else
                 x_r = new(j)%x
             end if
         
             if ( new(j)%y>Lbox ) then
-                y_r = new(j)%y - Lz
+                y_r = new(j)%y - Ly
             else if ( new(j)%y<(-Lbox)  ) then
-                y_r = new(j)%y + Lz
+                y_r = new(j)%y + Ly
             else
                 y_r = new(j)%y
             end if
@@ -333,20 +322,13 @@ subroutine polymer_move (change)
             else 
                 z_r = new(j)%z
             end if    
-            r_radius = dsqrt( x_r*x_r + y_r*y_r )
-            if(r_radius<Lr)then
-        	    ir_temp(j) = floor( r_radius / dr ) + 1
-            else 
-                ir_temp(j) = Nr + 1
-            end if            
+            
+            ix_temp(j) = floor( (Lx_2 + x_r ) / dx ) + 1
+            iy_temp(j) = floor( (Ly_2 + y_r ) / dy ) + 1            
             iz_temp(j) = floor( (Lz_2 + z_r ) / dz ) + 1
 
-            if (iz_temp(j)>Nz .or. ir_temp(j)>Nr+1) then
-                print*, "segementation fault2"
-            end if
-
-            DE2 = DE2 + w(ir_temp(j), iz_temp(j), itheta(jj), iphi(jj) )  &
-                      - w(ir(jj,j), iz(jj,j), itheta(jj), iphi(jj) )
+            DE2 = DE2 + w(ix_temp(j),iy_temp(j),iz_temp(j),itheta(jj),iphi(jj)) &
+                      - w(ix(jj,j),iy(jj,j),iz(jj,j),itheta(jj),iphi(jj))
         end do
 
 
@@ -358,8 +340,9 @@ subroutine polymer_move (change)
             polymer(jj,j)%x = new(j)%x
             polymer(jj,j)%y = new(j)%y
             polymer(jj,j)%z = new(j)%z
+            ix(jj,j) = ix_temp(j)
+            iy(jj,j) = iy_temp(j)
             iz(jj,j) = iz_temp(j)
-            ir(jj,j) = ir_temp(j)
         end do  
  
     else     
@@ -378,7 +361,7 @@ subroutine rotate_sphere (change)
     integer i, j, k, l 
     integer :: change 
     type(node) :: new(1:N_azo,0:Nm)
-    Integer :: ir_temp(1:N_azo,0:Nm), iz_temp(1:N_azo,0:Nm)
+    Integer :: ix_temp(1:N_azo,0:Nm), iy_temp(1:N_azo,0:Nm), iz_temp(1:N_azo,0:Nm)
     Integer :: itheta_new(1:N_azo,0:Nm), iphi_new(1:N_azo,0:Nm)
     DOUBLE PRECISION :: axis(3)
     DOUBLE PRECISION :: r_radius, r, cos_t, sin_t, phi 
@@ -417,23 +400,21 @@ subroutine rotate_sphere (change)
     DE2 = 0
     do j = 1, N_azo
         i = 0
-            r_radius = dsqrt(new(j,i)%x*new(j,i)%x + new(j,i)%y*new(j,i)%y)
-            ir_temp(j,i) = floor( r_radius / dr ) + 1 
+            ix_temp(j,i) = floor( ( new(j,i)%x + Lx_2 ) / dx ) + 1
+            iy_temp(j,i) = floor( ( new(j,i)%y + Ly_2 ) / dy ) + 1 
             iz_temp(j,i) = floor( ( new(j,i)%z + Lz_2 ) / dz ) + 1
-            DE2 = DE2 + w(ir_temp(j,i), iz_temp(j,i), 0, 0)  &
-                      - w(ir_azo(j,i), iz_azo(j,i), 0, 0)              
+            DE2 = DE2 + w(ix_temp(j,i),iy_temp(j,i),iz_temp(j,i), 0, 0)  &
+                      - w(ix_azo(j,i), iy_azo(j,i), iz_azo(j,i), 0, 0)              
         do i= 1, Nm 
-            r_radius = dsqrt(new(j,i)%x*new(j,i)%x + new(j,i)%y*new(j,i)%y)
-        	ir_temp(j,i) = floor( r_radius / dr ) + 1 
+            ix_temp(j,i) = floor( ( new(j,i)%x + Lx_2 ) / dx ) + 1
+            iy_temp(j,i) = floor( ( new(j,i)%y + Ly_2 ) / dy ) + 1 
             iz_temp(j,i) = floor( ( new(j,i)%z + Lz_2 ) / dz ) + 1  
             itheta_new(j,i) = floor( 0.99999999d0*abs(new(j,i)%z - new(j,i-1)%z)/dtheta ) + 1
-            phi_azo = 1 - 0.99999999d0*((new(j,i)%x - new(j,i-1)%x)*new(j,i)%x    &
-                                       +(new(j,i)%y - new(j,i-1)%y)*new(j,i)%y)   &
-                                  /dsqrt(new(j,i)%x*new(j,i)%x + new(j,i)%y*new(j,i)%y)
+            phi_azo = 1 - 0.99999999d0*(new(j,i)%x - new(j,i-1)%x)                                  
             iphi_new(j,i) = floor( 0.99999999d0*phi_azo/dphi ) + 1 
-
-            DE2 = DE2 + w(ir_temp(j,i), iz_temp(j,i), itheta_new(j,i), iphi_new(j,i))  &
-                      - w(ir_azo(j,i), iz_azo(j,i), itheta_azo(j,i), iphi_azo(j,i) )            
+            
+            DE2 = DE2 + w(ix_temp(j,i),iy_temp(j,i),iz_temp(j,i),itheta_new(j,i),iphi_new(j,i))  &
+                      - w(ix_azo(j,i),iy_azo(j,i),iz_azo(j,i),itheta_azo(j,i),iphi_azo(j,i) )            
             
         end do
     end do
@@ -445,8 +426,9 @@ subroutine rotate_sphere (change)
                 azo(j,i)%x = new(j,i)%x
                 azo(j,i)%y = new(j,i)%y
                 azo(j,i)%z = new(j,i)%z
+                ix_azo(j,i) = ix_temp(j,i)
+                iy_azo(j,i) = iy_temp(j,i)
                 iz_azo(j,i) = iz_temp(j,i)
-                ir_azo(j,i) = ir_temp(j,i)
             end do
             do i=1, nm
                 itheta_azo(j,j) = itheta_new(j,i)
@@ -552,8 +534,10 @@ end do
 
 do j=1,N_azo
     do i=1,Nm   
-        if (ir_azo(j,i)>Nr+1) then
-            print*,"azo ir is beyond the box",j,i,ir_azo(j,i)
+        if (ix_azo(j,i)>Nx) then
+            print*,"azo ix is beyond the box",j,i,ix_azo(j,i)
+        else if (iy_azo(j,i)>Ny) then
+            print*,"azo iy is beyond the box",j,i,iy_azo(j,i)
         else if (iz_azo(j,i)>Nz) then
             print*,"azo iz is beyond the box",j,i,iz_azo(j,i)
         else if (itheta_azo(j,i)>N_theta) then
@@ -600,8 +584,10 @@ end do
 
 do j=1, N_chain
     do i=0, Nm_chain
-        if (ir(j,i)>Nr+1) then
-            print*,"polymer ir is beyond the box",j,i,ir(j,i)
+        if (ix(j,i)>Nx) then
+            print*,"polymer ix is beyond the box",j,i,ix(j,i)
+        else if (iy(j,i)>Ny) then
+            print*,"polymer iy is beyond the box",j,i,iy(j,i)            
         else if (iz(j,i)>Nz) then
             print*,"polymer iz is beyond the box",j,i,iz(j,i)
         flag_c = 1
