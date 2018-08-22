@@ -1,5 +1,5 @@
 #PBS -S /bin/bash
-#PBS -N nu080
+#PBS -N testNxyz
 #PBS -o job.pbo
 #PBS -j oe
 #PBS -q workq
@@ -7,7 +7,7 @@
 #PBS -l walltime=9999:00:00
 #PBS -V
 #-----------------------------------------------------------------------
-jobname="nu080"
+jobname="testNxyz"
 cd $PBS_O_WORKDIR
 #-----------------------------------------------------------------------
 echo "Number of cores: 1"

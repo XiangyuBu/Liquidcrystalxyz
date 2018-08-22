@@ -21,6 +21,7 @@ open(unit=61,file='azonew.txt')
 open(unit=62,file='polymernew.txt')
 open(unit=63,file='densitynew.txt')
 open(unit=64,file='cos2sum.txt')
+open(unit=65,file='denpol.txt')
 !call SCMFT()
 
 inquire(file='w.txt',exist=alive) 
@@ -153,12 +154,20 @@ density(:,:,:) = density(:,:,:)/rho_0
 do i = 1,Nx
     do j = 1,Ny
         do k = 1,Nz
-            write(60,"(7E25.13)") i,j,k,costheta_2(i,j,k),density(i,j,k)
+            write(60,*) i, j, k, costheta_2(i,j,k)
         end do
     end do
 end do
 close(60)
 
+do i = 1,Nx
+    do j = 1,Ny
+        do k = 1,Nz
+            write(65,*) i, j, k, density(i,j,k)
+        end do
+    end do
+end do
+close(65)
 
 !do j=1,N_azo
 !    do i=0,Nm

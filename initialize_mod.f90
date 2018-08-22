@@ -166,7 +166,7 @@ Lbox = Lz_2
 dx = 1.0d0*Lx/Nx
 dy = 1.0d0*Ly/Ny
 dz = 1.0d0*Lz/Nz
-rho_0 = 1.0d0*(Nm_chain*N_chain) / (Lx*Ly*Lz)  
+rho_0 = 1.0d0*(Nm_chain*N_chain) / (Nx*Ny*Nz)  
 
 !!!!!!!!!!!!
 ! initialize the omega
@@ -333,9 +333,8 @@ do j=1, N_chain
         end if    
         ix(j,i) = floor( (Lx_2 + x_r) / dx ) + 1        
         iy(j,i) = floor( (Ly_2 + y_r) / dy ) + 1
-    	iz(j,i) = floor( (Lz_2 + z_r) / dz ) + 1	       
-        	
-		write(22,"(7E25.13)") j,i,ix(j,i),iy(j,i),iz(j,i)
+        iz(j,i) = floor( (Lz_2 + z_r) / dz ) + 1
+        write(22,*) j, i, ix(j,i), iy(j,i), iz(j,i)
 	end do   
     itheta(j) = floor( 0.99999999d0*abs(polymer(j,1)%z - polymer(j,0)%z)/dtheta ) + 1
     phi_azo = 1.0d0 - 0.99999999d0*((polymer(j,1)%x - polymer(j,0)%x))
