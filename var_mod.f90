@@ -11,6 +11,8 @@ DOUBLE PRECISION :: r, cos2sum, cossum
 DOUBLE PRECISION, DIMENSION(:,:,:), ALLOCATABLE :: density
 DOUBLE PRECISION, DIMENSION(:,:,:,:,:), ALLOCATABLE :: density_polymer,density_azo 
 DOUBLE PRECISION, DIMENSION(:,:,:), ALLOCATABLE :: costheta, costheta_2
+DOUBLE PRECISION :: u(3)
+DOUBLE PRECISION :: s_n(3,3), s_ni(3), s_nv(3,3), snb(3), snz(3)
 logical alive,check
 allocate(density_polymer(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
 allocate(density_azo(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
@@ -52,9 +54,11 @@ density_azo = 0
 costheta = 0
 costheta_2 = 0
 cos2sum = 0
+u = 0
+s_n = 0
+
 do while(MCS < 10*NMCs)               
     MCS = MCS + 1
-
     moves = 0
         do while(moves < Nmove)              
         
@@ -108,13 +112,27 @@ do while(MCS < 10*NMCs)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
 !    cal density
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!       
-        do j=1,N_chain
-            density_polymer(ix(j,0),iy(j,0),iz(j,0),0,0) = density_polymer(ix(j,0),iy(j,0),iz(j,0),0,0) + 1
-            do i=1,Nm_chain
-                density_polymer(ix(j,i),iy(j,i),iz(j,i),itheta(j),iphi(j)) &
-                = density_polymer( ix(j,i),iy(j,i),iz(j,i),itheta(j),iphi(j) ) + 1                
-            end do
-        end do
+        do i = 1,N_chain
+
+            u(1) = polymer(i,2)%x - polymer(i,1)%x
+            u(2) = polymer(i,2)%y - polymer(i,1)%y
+            u(3) = polymer(i,2)%z - polymer(i,1)%z
+            
+            s_n(1,1) = s_n(1,1) +  0.5d0*( 3*u(1)*u(1) - 1 )
+            s_n(1,2) = s_n(1,2) +  0.5d0*( 3*u(1)*u(2)     )
+            s_n(1,3) = s_n(1,3) +  0.5d0*( 3*u(1)*u(3)     )
+            s_n(2,2) = s_n(2,2) +  0.5d0*( 3*u(2)*u(2) - 1 )
+            s_n(2,3) = s_n(2,3) +  0.5d0*( 3*u(2)*u(3)     )
+            s_n(3,3) = s_n(3,3) +  0.5d0*( 3*u(3)*u(3) - 1 )
+
+        end do                 
+!        do j=1,N_chain
+!            density_polymer(ix(j,0),iy(j,0),iz(j,0),0,0) = density_polymer(ix(j,0),iy(j,0),iz(j,0),0,0) + 1
+!            do i=1,Nm_chain
+!                density_polymer(ix(j,i),iy(j,i),iz(j,i),itheta(j),iphi(j)) &
+!                = density_polymer( ix(j,i),iy(j,i),iz(j,i),itheta(j),iphi(j) ) + 1                
+!            end do
+!        end do
 !        do j=1,N_azo
 !            do i=1,Nm
 !                density_azo(ix_azo(j,i),iy_azo(j,i),iz_azo(j,i),itheta_azo(j,i),iphi_azo(j,i)) &
@@ -125,13 +143,22 @@ do while(MCS < 10*NMCs)
   
 end do   ! MCS
 
+s_n(2,1) = s_n(1,2)
+s_n(3,1) = s_n(1,3)
+s_n(3,2) = s_n(2,3)
+s_n = s_n / N_chain /MCS  
+print*, s_n(1,1), s_n(1,2), s_n(1,3)
+print*, s_n(2,1), s_n(2,2), s_n(2,3)
+print*, s_n(3,1), s_n(3,2), s_n(3,3)
+call jacobi(3,3,s_n,s_ni,s_nv,snb,snz)
 
-density_polymer = 0.5d0*density_polymer/MCS
+
+!density_polymer = 0.5d0*density_polymer/MCS
 density = density/MCS
 costheta_2 = costheta_2/MCS
 cos2sum = cos2sum/MCS/N_chain
 cossum = cossum/MCS/N_chain
-write(64,*) cos2sum, cossum
+write(64,*) cos2sum, s_ni(1), s_ni(2), s_ni(3)
 !density_azo = 0.5d0*deltaS*density_azo/MCS
 !do j = 1,Nr
 !    do i = 1,Nz
@@ -147,7 +174,7 @@ write(64,*) cos2sum, cossum
 print*, "MCS is ok "
 print*, "cos2thetasum is", cos2sum
 print*, "costhetasum is", cossum
-density_polymer(:,:,:,:,:) = density_polymer(:,:,:,:,:)/rho_0
+!density_polymer(:,:,:,:,:) = density_polymer(:,:,:,:,:)/rho_0
 costheta_2(:,:,:) = costheta_2(:,:,:)/rho_0
 density(:,:,:) = density(:,:,:)/rho_0
  

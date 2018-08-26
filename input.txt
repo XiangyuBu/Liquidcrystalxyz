@@ -1,6 +1,6 @@
 0.5                !azo_position     ! azo position / L from the free end
 0.4d0              ! ratio_sigma grafting density ratio between substrate and sphere sigma_p/sigma_s
-20.0d0              ! interaction parameter 
+5.0d0              ! interaction parameter 
 2.0d0              ! L/a
 0.25d0             ! radius of sphere/L
 42                 ! number of grafted chains
@@ -14,7 +14,7 @@
 200                ! number of move in a MC step 
 50                 ! Max of iterations
 1                  ! num==1 ,pivot move with no small pivot move 
-0.5d0              ! the limitation of the random move angle 
+1.0d0              ! the limitation of the random move angle 
 0.05d0             ! the limitation of the sphere move angle
 1.0d0              ! trial move max
 1.0d0              ! real loa

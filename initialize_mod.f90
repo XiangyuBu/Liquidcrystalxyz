@@ -147,7 +147,7 @@ i_azo = floor(azo_position*Nm)
 ! compute bending coefficent of chain
 epsilon_azo = 1.0d0*Nm/(4.0d0*loa_azo)
 epsilon = 1.0d0*Nm/(4.0d0*loa_polymer)    
-deltaS = 1.0d0*Loa/Nm
+deltaS = 1.0d0/Nm_chain
 
 
 ! depend on roL
