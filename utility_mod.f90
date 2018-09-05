@@ -207,7 +207,7 @@ subroutine pivot (change)
 
     r = ran2(seed)
    
-    if ( r < dexp ( -DE2 ))then
+    if ( r < dexp ( - deltaS * DE2 ))then
 
         do j = 1, Nm_chain          
             polymer(jj,j)%x = new(j)%x
@@ -334,7 +334,7 @@ subroutine polymer_move (change)
 
     r = ran2(seed)
    
-    if ( r < dexp ( -DE2 ))then
+    if ( r < dexp ( - deltaS * DE2 ))then
         
         do j = 0, Nm_chain          
             polymer(jj,j)%x = new(j)%x
