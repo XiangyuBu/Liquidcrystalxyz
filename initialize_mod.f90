@@ -2,6 +2,7 @@ subroutine initialize()
 USE global_parameters
 USE utility_routines 
 IMPLICIT NONE
+INCLUDE 'mpif.h'
 
 Integer*8 npts,mynpts,change_2,change_3
 Integer :: flag_c, index_con, n_graft_point, x_flag, x_stat
@@ -27,8 +28,9 @@ character res0,res1,res2
 logical alive,check
 
 call date_and_time(values=ddt)
-seed=(ddt(8)-500)*54321 + 11223344
+!seed=(ddt(8)-500)*54321 + 11223344
 !open(unit=15,file='log.txt')
+seed=(ddt(8)-500)*654321*(myid+1) + 88888*myid
 open(unit=10,file='input.txt')
 
 read(10,*) azo_position    ! azo position / L from the free end
@@ -119,7 +121,7 @@ do jp = 1,N_theta
                 else
                     change_3 = 0
                 end if                     
-                if (change_2 .and. change_3 == 1) then
+                if (change_2==1 .and. change_3 == 1) then
                     v_tide(j,i,jp,ip) = dsqrt( 1.0d0 - 0.999999999d0*(xx(i)*xx(ip) + yy*yyp + zz(j)*zz(jp))**2 ) &
                                       + dsqrt( 1.0d0 - 0.999999999d0*(xx(i)*xx(ip) - yy*yyp + zz(j)*zz(jp))**2 )
  !                   print*,xx(i)*xx(ip) + yy*yyp + zz(j)*zz(jp),xx(i)*xx(ip) - yy*yyp + zz(j)*zz(jp)
@@ -167,12 +169,10 @@ dx = 1.0d0*Lx/Nx
 dy = 1.0d0*Ly/Ny
 dz = 1.0d0*Lz/Nz
 rho_0 = 1.0d0*(Nm_chain*N_chain) / (Nx*Ny*Nz)  
-
 !!!!!!!!!!!!
 ! initialize the omega
 !!!!!!!!!!!!                 
 w = 0
-w_new = 0
 !!!!!!!!!!!!!initialize azo-polymer on the sphere
 
 allocate(azo(1:n_azo,0:Nm))
@@ -284,7 +284,6 @@ do j=1,N_chain
         polymer(j,i)%z = polymer(j,i-1)%z + axis(3)     
     end do
 end do
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !open(22,file='ixyz_azo.dat')
 !do j=1,N_azo

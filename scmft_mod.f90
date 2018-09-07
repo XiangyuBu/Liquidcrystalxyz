@@ -3,6 +3,7 @@ USE global_parameters
 USE utility_routines    
 
 implicit none
+INCLUDE 'mpif.h'
 
 Integer :: i, j, k,jp,ip
 integer :: change ! change is the flag of MC, 1 for accepte the move.
@@ -12,20 +13,21 @@ integer :: flag_c
 DOUBLE PRECISION, PARAMETER :: TOL = 1.5D-3
 DOUBLE PRECISION ::  w_erro, r
 DOUBLE PRECISION :: derro(1:70),erro(1:70),errodown
-DOUBLE PRECISION, DIMENSION(:,:,:,:,:), ALLOCATABLE :: density
+DOUBLE PRECISION, DIMENSION(:,:,:,:,:), ALLOCATABLE :: density, density_temp
 
 
 character*7 res,resres,res_s,res_o
 character res0,res1,res2
 
 allocate( density(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi) )
+allocate( density_temp(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi) )
 allocate( w_new(1:Nx,1:Ny,1:Nz,0:N_theta,0:N_phi) )
 !!! iteration
- 
+w_new = 0 
 open(unit=15, file='Npre.txt')
 
 do n_iter = 1, Max_iter
-print*, "start", n_iter,"iteration"
+    print*, "start", n_iter,"iteration"
 
 !    res0=achar(48+mod(n_iter,10))
 !    res1=achar(48+mod(int(n_iter/10),10))
@@ -204,6 +206,13 @@ print*, "start", n_iter,"iteration"
     end do   ! MCS
     density = 0.5d0*density / MCS
 !    density = 0.5d0*deltaS*density / MCS  ! here 0.5 is consider the symetry of f(varphi) = f(-varphi)   
+    
+    CALL MPI_barrier(MPI_COMM_WORLD, ierr)
+    call mpi_allreduce(density(1,1,1,0,0),density_temp(1,1,1,0,0),Nx*Ny*Nz*N_theta*N_phi, &
+         mpi_double_precision,mpi_sum,mpi_comm_world,ierr)
+    density=density_temp/numprocs
+
+    if (myid==0) then
     density (:,:,:,:,:) = density (:,:,:,:,:)/rho_0
     w_new = 0
     do j = 1, N_theta
@@ -251,7 +260,7 @@ print*, "start", n_iter,"iteration"
         close(61)
         exit
     end if
-    
+    errodown = -1.0d0
     if (n_iter>5) then
         
         derro(n_iter) = erro(n_iter) - erro(n_iter-1)
@@ -294,7 +303,7 @@ print*, "start", n_iter,"iteration"
     
     !simple mixing scheme
     w = lambda*w_new + (1-lambda)*w
-
+    end if
     ! boundary condition
          
 !    call checkpolymer (flag_c)             

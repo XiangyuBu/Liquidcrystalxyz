@@ -37,6 +37,7 @@ DOUBLE PRECISION :: nu, tau, epsilon, epsilon_azo, Lbox
 DOUBLE PRECISION ::  Loa, deltaS,lambda
 Integer :: n_iter, Max_iter, N_pre, Npre, Nmove, moves, NMCs,NMCstot, MCS, ncount
 Integer :: seed
+Integer :: comm, ierr, myid, numprocs  !MPI parameter
 logical ::keepruning   !if keep MC simulating in the w field ,keepruning=.true.
 !while the Npre will times 10 to keep a longer MC simulation time ,you can times
 !a much longer time if you want

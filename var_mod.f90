@@ -3,20 +3,29 @@ USE global_parameters
 USE utility_routines    
 
 implicit none
+INCLUDE 'mpif.h' 
 
 Integer :: i, j, k,jp,ip
 integer :: change ! change is the flag of MC, 1 for accepte the move.
 
-DOUBLE PRECISION :: r, cos2sum, cossum
+DOUBLE PRECISION :: r, cos2sum, cossum, cos2sum_temp, cossum_temp
 DOUBLE PRECISION, DIMENSION(:,:,:), ALLOCATABLE :: density
 DOUBLE PRECISION, DIMENSION(:,:,:,:,:), ALLOCATABLE :: density_polymer,density_azo 
 DOUBLE PRECISION, DIMENSION(:,:,:), ALLOCATABLE :: costheta, costheta_2
+DOUBLE PRECISION, DIMENSION(:,:,:), ALLOCATABLE :: density_temp
+DOUBLE PRECISION, DIMENSION(:,:,:,:,:), ALLOCATABLE :: density_polymer_temp,density_azo_temp 
+DOUBLE PRECISION, DIMENSION(:,:,:), ALLOCATABLE :: costheta_temp, costheta_2_temp
 DOUBLE PRECISION :: u(3)
 DOUBLE PRECISION :: s_n(3,3), s_ni(3), s_nv(3,3), snb(3), snz(3)
+DOUBLE PRECISION :: s_n_temp(3,3)
 logical alive,check
 allocate(density_polymer(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
 allocate(density_azo(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
 allocate(costheta(1:Nx,1:Ny,1:Nz),costheta_2(1:Nx,1:Ny,1:Nz),density(1:Nx,1:Ny,1:Nz))
+allocate(density_polymer_temp(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
+allocate(density_azo_temp(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
+allocate(density_temp(1:Nx,1:Ny,1:Nz))
+allocate(costheta_temp(1:Nx,1:Ny,1:Nz),costheta_2_temp(1:Nx,1:Ny,1:Nz))
 
 open(unit=60,file='costheta.txt')
 open(unit=61,file='azonew.txt')
@@ -53,6 +62,10 @@ density_polymer = 0
 density_azo = 0
 costheta = 0
 costheta_2 = 0
+density_polymer_temp = 0
+density_azo_temp = 0
+costheta_temp = 0
+costheta_2_temp = 0
 cos2sum = 0
 u = 0
 s_n = 0
@@ -147,79 +160,83 @@ s_n(2,1) = s_n(1,2)
 s_n(3,1) = s_n(1,3)
 s_n(3,2) = s_n(2,3)
 s_n = s_n / N_chain /MCS  
-print*, s_n(1,1), s_n(1,2), s_n(1,3)
-print*, s_n(2,1), s_n(2,2), s_n(2,3)
-print*, s_n(3,1), s_n(3,2), s_n(3,3)
-call jacobi(3,3,s_n,s_ni,s_nv,snb,snz)
-
-
 !density_polymer = 0.5d0*density_polymer/MCS
 density = density/MCS
 costheta_2 = costheta_2/MCS
 cos2sum = cos2sum/MCS/N_chain
 cossum = cossum/MCS/N_chain
-write(64,*) cos2sum, s_ni(1), s_ni(2), s_ni(3)
-!density_azo = 0.5d0*deltaS*density_azo/MCS
-!do j = 1,Nr
-!    do i = 1,Nz
-!        if (costheta(j,i) /= 0) then
-!            costheta(j,i) = costheta(j,i)/density(j,i)
-!        end if
-!        if (costheta_2(j,i) /= 0) then
-!            costheta_2(j,i) = costheta_2(j,i)/density(j,i)
-!        end if
-!    end do
-!end do
+print*, "var is ok "
+CALL MPI_barrier(MPI_COMM_WORLD, ierr)
+print*, myid, "barrier is ok"
+call mpi_allreduce(cossum, cossum_temp, 1, mpi_double_precision, mpi_sum, mpi_comm_world, ierr)
+call mpi_allreduce(cos2sum, cos2sum_temp, 1, mpi_double_precision, mpi_sum, mpi_comm_world, ierr)
+call mpi_allreduce(s_n(1,1), s_n_temp(1,1), 3*3, mpi_double_precision, mpi_sum, mpi_comm_world, ierr)
+call mpi_allreduce(density(1,1,1), density_temp(1,1,1), Nx*Ny*Nz, mpi_double_precision, mpi_sum, mpi_comm_world, ierr)
+call mpi_allreduce(costheta_2(1,1,1), costheta_2_temp(1,1,1), Nx*Ny*Nz, mpi_double_precision, mpi_sum, mpi_comm_world, ierr)
+cossum=cossum_temp/numprocs
+cos2sum=cos2sum_temp/numprocs
+s_n=s_n_temp/numprocs
+density=density_temp/numprocs
+costheta_2=costheta_2_temp/numprocs
+print*,"mpi is ok"
 
-print*, "MCS is ok "
+print*, s_n(1,1), s_n(1,2), s_n(1,3)
+print*, s_n(2,1), s_n(2,2), s_n(2,3)
+print*, s_n(3,1), s_n(3,2), s_n(3,3)
+call jacobi(3,3,s_n,s_ni,s_nv,snb,snz)
+write(64,*) cos2sum, s_ni(1), s_ni(2), s_ni(3)
+
+print*, "the Minimum eigenvalue is", s_ni(3)
 print*, "cos2thetasum is", cos2sum
 print*, "costhetasum is", cossum
 !density_polymer(:,:,:,:,:) = density_polymer(:,:,:,:,:)/rho_0
 costheta_2(:,:,:) = costheta_2(:,:,:)/rho_0
 density(:,:,:) = density(:,:,:)/rho_0
- 
-do i = 1,Nx
-    do j = 1,Ny
-        do k = 1,Nz
-            write(60,*) i, j, k, costheta_2(i,j,k)
+
+if (myid==0) then
+    do i = 1,Nx
+        do j = 1,Ny
+            do k = 1,Nz
+                write(60,*) i, j, k, costheta_2(i,j,k)
+            end do
         end do
     end do
-end do
-close(60)
+    close(60)
 
-do i = 1,Nx
-    do j = 1,Ny
-        do k = 1,Nz
-            write(65,*) i, j, k, density(i,j,k)
+    do i = 1,Nx
+        do j = 1,Ny
+            do k = 1,Nz
+                write(65,*) i, j, k, density(i,j,k)
+            end do
         end do
     end do
-end do
-close(65)
+    close(65)
 
-!do j=1,N_azo
-!    do i=0,Nm
-!        write(61,*)  azo(j,i)%x, azo(j,i)%y, azo(j,i)%z
+!    do j=1,N_azo
+!        do i=0,Nm
+!            write(61,*)  azo(j,i)%x, azo(j,i)%y, azo(j,i)%z
+!        end do
 !    end do
-!end do
-!close(61)
+!    close(61)
 
-do j=1,N_chain
-    do i=0,Nm_chain
-        write(62,*)  polymer(j,i)%x, polymer(j,i)%y, polymer(j,i)%z
+    do j=1,N_chain
+        do i=0,Nm_chain
+            write(62,*)  polymer(j,i)%x, polymer(j,i)%y, polymer(j,i)%z
+        end do
     end do
-end do
-close(62)
+    close(62)
 
 
-!do j=1,nz
-!    do i=1,nr
-!        write(63,"(7E25.13)") zz_r(j), rr_r(i), density_polymer(i,j), density_azo (i,j)
+!    do j=1,nz
+!        do i=1,nr
+!            write(63,"(7E25.13)") zz_r(j), rr_r(i), density_polymer(i,j), density_azo (i,j)
+!        end do
 !    end do
-!end do
 
-close(61)
-close(62)
-close(63)
-close(64)
+    close(61)
+    close(62)
+    close(63)
+    close(64)
 
+end if
 end subroutine var_s

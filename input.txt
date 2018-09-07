@@ -1,6 +1,6 @@
 0.5                !azo_position     ! azo position / L from the free end
 0.4d0              ! ratio_sigma grafting density ratio between substrate and sphere sigma_p/sigma_s
-0.0d0              ! interaction parameter 
+80.0d0              ! interaction parameter 
 2.0d0              ! L/a
 0.25d0             ! radius of sphere/L
 42                 ! number of grafted chains
