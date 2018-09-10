@@ -360,7 +360,7 @@ close(30)
 !call checkpolymer (flag_c)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-print*,"initial OK"
+!print*,"initial OK"
 
 
 j=0
@@ -415,7 +415,7 @@ end if
 
 Deallocate(bond_vector)    
 
-write(*,*) "CREATED OK"
+!write(*,*) "CREATED OK"
 
 open(unit=30, file='polymer_ini.txt')
     do j = 1, N_chain

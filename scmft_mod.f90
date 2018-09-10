@@ -27,7 +27,7 @@ w_new = 0
 open(unit=15, file='Npre.txt')
 
 do n_iter = 1, Max_iter
-    print*, "start", n_iter,"iteration"
+!    print*, "start", n_iter,"iteration"
 
 !    res0=achar(48+mod(n_iter,10))
 !    res1=achar(48+mod(int(n_iter/10),10))
@@ -131,7 +131,7 @@ do n_iter = 1, Max_iter
     
     MCS = 0
     density = 0
-    do while(MCS < NMCs)
+    do while(MCS < NMCs/20)
                
         MCS = MCS + 1
   

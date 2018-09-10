@@ -70,7 +70,7 @@ cos2sum = 0
 u = 0
 s_n = 0
 
-do while(MCS < 10*NMCs)               
+do while(MCS < NMCs)               
     MCS = MCS + 1
     moves = 0
         do while(moves < Nmove)              
@@ -180,13 +180,14 @@ density=density_temp/numprocs
 costheta_2=costheta_2_temp/numprocs
 print*,"mpi is ok"
 
-print*, s_n(1,1), s_n(1,2), s_n(1,3)
-print*, s_n(2,1), s_n(2,2), s_n(2,3)
-print*, s_n(3,1), s_n(3,2), s_n(3,3)
+!print*, s_n(1,1), s_n(1,2), s_n(1,3)
+!print*, s_n(2,1), s_n(2,2), s_n(2,3)
+!print*, s_n(3,1), s_n(3,2), s_n(3,3)
+
 call jacobi(3,3,s_n,s_ni,s_nv,snb,snz)
 write(64,*) cos2sum, s_ni(1), s_ni(2), s_ni(3)
 
-print*, "the Minimum eigenvalue is", s_ni(3)
+print*, "Minimum eigenvalue is", s_ni(3)
 print*, "cos2thetasum is", cos2sum
 print*, "costhetasum is", cossum
 !density_polymer(:,:,:,:,:) = density_polymer(:,:,:,:,:)/rho_0
