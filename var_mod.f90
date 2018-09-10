@@ -19,11 +19,11 @@ DOUBLE PRECISION :: u(3)
 DOUBLE PRECISION :: s_n(3,3), s_ni(3), s_nv(3,3), snb(3), snz(3)
 DOUBLE PRECISION :: s_n_temp(3,3)
 logical alive,check
-allocate(density_polymer(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
-allocate(density_azo(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
+allocate(density_polymer(1:Nx,1:Ny,1:Nz,0:N_theta,0:N_phi))
+allocate(density_azo(1:Nx,1:Ny,1:Nz,0:N_theta,0:N_phi))
 allocate(costheta(1:Nx,1:Ny,1:Nz),costheta_2(1:Nx,1:Ny,1:Nz),density(1:Nx,1:Ny,1:Nz))
-allocate(density_polymer_temp(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
-allocate(density_azo_temp(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi))
+allocate(density_polymer_temp(1:Nx,1:Ny,1:Nz,0:N_theta,0:N_phi))
+allocate(density_azo_temp(1:Nx,1:Ny,1:Nz,0:N_theta,0:N_phi))
 allocate(density_temp(1:Nx,1:Ny,1:Nz))
 allocate(costheta_temp(1:Nx,1:Ny,1:Nz),costheta_2_temp(1:Nx,1:Ny,1:Nz))
 
@@ -42,8 +42,8 @@ if(alive) then
     do i = 1, Nx
         do j = 1, Ny
             do k = 1, Nz
-                do jp =1, N_theta
-                    do ip = 1, N_phi
+                do jp =0, N_theta
+                    do ip = 0, N_phi
                         read(42,*) w(i,j,k,jp,ip)  
                     end do
                 end do

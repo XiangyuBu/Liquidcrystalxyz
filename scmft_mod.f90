@@ -19,8 +19,8 @@ DOUBLE PRECISION, DIMENSION(:,:,:,:,:), ALLOCATABLE :: density, density_temp
 character*7 res,resres,res_s,res_o
 character res0,res1,res2
 
-allocate( density(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi) )
-allocate( density_temp(1:Nx,1:Ny,1:Nz,1:N_theta,1:N_phi) )
+allocate( density(1:Nx,1:Ny,1:Nz,0:N_theta,0:N_phi) )
+allocate( density_temp(1:Nx,1:Ny,1:Nz,0:N_theta,0:N_phi) )
 allocate( w_new(1:Nx,1:Ny,1:Nz,0:N_theta,0:N_phi) )
 !!! iteration
 w_new = 0 
@@ -208,7 +208,7 @@ do n_iter = 1, Max_iter
 !    density = 0.5d0*deltaS*density / MCS  ! here 0.5 is consider the symetry of f(varphi) = f(-varphi)   
     
     CALL MPI_barrier(MPI_COMM_WORLD, ierr)
-    call mpi_allreduce(density(1,1,1,0,0),density_temp(1,1,1,0,0),Nx*Ny*Nz*N_theta*N_phi, &
+    call mpi_allreduce(density(1,1,1,0,0),density_temp(1,1,1,0,0),Nx*Ny*Nz*(N_theta+1)*(N_phi+1), &
          mpi_double_precision,mpi_sum,mpi_comm_world,ierr)
     density=density_temp/numprocs
 
@@ -217,8 +217,8 @@ do n_iter = 1, Max_iter
     w_new = 0
     do j = 1, N_theta
         do i = 1, N_phi
-            do jp = 1, N_theta
-                do ip = 1, N_phi
+            do jp = 0, N_theta
+                do ip = 0, N_phi
                     w_new(:,:,:,j,i) = w_new(:,:,:,j,i) + nu*density(:,:,:,jp,ip) * v_tide(j,i,jp,ip)
                 end do
             end do
@@ -230,15 +230,15 @@ do n_iter = 1, Max_iter
     do k = 1, Nz
         do j = 1, Ny
             do i = 1, Nx
-                do jp =1, N_theta
-                    do ip = 1, N_phi
+                do jp =0, N_theta
+                    do ip = 0, N_phi
                         w_erro = w_erro + abs(w_new(i,j,k,jp,ip) - w(i,j,k,jp,ip))  
                     end do
                 end do
             end do
         end do
     end do  
-    w_erro = 1.d0*w_erro/Nz/Ny/Nx/N_theta/N_phi    
+    w_erro = 1.d0*w_erro/Nz/Ny/Nx/(N_theta+1)/(N_phi+1)    
     
     print*, "SCMFT", n_iter, w_erro
    
@@ -249,8 +249,8 @@ do n_iter = 1, Max_iter
         do i = 1, Nx
             do j = 1, Ny 
                 do k = 1, Nz
-                    do jp =1, N_theta
-                        do ip = 1, N_phi
+                    do jp =0, N_theta
+                        do ip = 0, N_phi
                             write(61,*) w_new(i,j,k,jp,ip)  
                         end do
                     end do
@@ -289,8 +289,8 @@ do n_iter = 1, Max_iter
         do i = 1, Nx
             do j = 1, Ny 
                 do k = 1, Nz
-                    do jp =1, N_theta
-                        do ip = 1, N_phi
+                    do jp =0, N_theta
+                        do ip = 0, N_phi
                             write(61,*) w_new(i,j,k,jp,ip)  
                         end do
                     end do
