@@ -211,9 +211,8 @@ do n_iter = 1, Max_iter
     call mpi_allreduce(density(1,1,1,0,0),density_temp(1,1,1,0,0),Nx*Ny*Nz*(N_theta+1)*(N_phi+1), &
          mpi_double_precision,mpi_sum,mpi_comm_world,ierr)
     density=density_temp/numprocs
-
-    if (myid==0) then
     density (:,:,:,:,:) = density (:,:,:,:,:)/rho_0
+    if (myid==0) then
     w_new = 0
     do j = 1, N_theta
         do i = 1, N_phi
@@ -300,16 +299,19 @@ do n_iter = 1, Max_iter
         close(61)
         exit
     end if    
-    
+
     !simple mixing scheme
     w = lambda*w_new + (1-lambda)*w
     end if
+!    CALL MPI_barrier(MPI_COMM_WORLD, ierr)   
     ! boundary condition
          
 !    call checkpolymer (flag_c)             
 
 end do  ! enddo n_iter
 close(15)
+CALL MPI_barrier(MPI_COMM_WORLD, ierr)
+
 deallocate(w_new)
 stop"SCMFT is ok"
 
